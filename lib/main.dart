@@ -1,4 +1,8 @@
+import 'dart:developer';
+import 'dart:math' show Random;
+
 import 'package:flutter/material.dart';
+import 'package:random_number_generator/base_textfield.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,6 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         // This is the theme of your application.
@@ -28,9 +33,9 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.redAccent),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Generador Aleatorio'),
     );
   }
 }
@@ -54,17 +59,90 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final minimumController = TextEditingController();
+  final maximumController = TextEditingController();
+  bool withSelectedNumbers = true;
+  int _generatedNumber = 0;
+  int _previousNumber = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  final List<int> _numbersSelected = [
+    // Jocsan
+    185,
+    518,
+    851,
+    // Charly
+    197,
+    530,
+    863,
+  ];
+
+  Future<void> _generateRandomNumber({bool withSelectedNumbers = false}) async {
+    final random = Random();
+    int selectedNumber = 0;
+    _previousNumber = _generatedNumber;
+
+    if (withSelectedNumbers) {
+      do {
+        final randomIndex = random.nextInt(_numbersSelected.length - 1);
+
+        selectedNumber = _numbersSelected[randomIndex];
+      } while (selectedNumber == _previousNumber);
+
+      final step = selectedNumber > _previousNumber ? 3 : -3;
+
+      log('step: $step');
+      log('previousNumber: $_previousNumber');
+      log('selectedNumber: $selectedNumber');
+
+      if (step > 0) {
+        for (var i = _previousNumber; i <= selectedNumber; i += step) {
+          await Future.delayed(const Duration(milliseconds: 1));
+
+          setState(() {
+            _generatedNumber = i;
+          });
+        }
+      } else {
+        for (var i = _previousNumber; i >= selectedNumber; i += step) {
+          await Future.delayed(const Duration(milliseconds: 1));
+
+          setState(() {
+            _generatedNumber = i;
+          });
+        }
+      }
+
+      if (selectedNumber != _generatedNumber) {
+        setState(() {
+          _generatedNumber = selectedNumber;
+        });
+      }
+    } else {
+      final minimum = int.tryParse(minimumController.text) ?? 0;
+      final maximum = int.tryParse(maximumController.text) ?? 999;
+
+      selectedNumber = random.nextInt(maximum - minimum) + minimum;
+
+      final step = selectedNumber > _previousNumber ? 3 : -3;
+
+      if (step > 0) {
+        for (var i = _previousNumber; i <= selectedNumber; i += step) {
+          await Future.delayed(const Duration(milliseconds: 2));
+
+          setState(() {
+            _generatedNumber = i;
+          });
+        }
+      } else {
+        for (var i = _previousNumber; i >= selectedNumber; i += step) {
+          await Future.delayed(const Duration(milliseconds: 2));
+
+          setState(() {
+            _generatedNumber = i;
+          });
+        }
+      }
+    }
   }
 
   @override
@@ -77,46 +155,131 @@ class _MyHomePageState extends State<MyHomePage> {
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         // TRY THIS: Try changing the color here to a specific color (to
         // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
         // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        title: Text(
+          widget.title,
+          style: const TextStyle(
+            color: Color.fromARGB(255, 121, 38, 38),
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                SizedBox(
+                  height: 150,
+                  width: MediaQuery.of(context).size.width,
+                  child: Stack(
+                    children: [
+                      SizedBox(
+                        height: 150,
+                        width: MediaQuery.of(context).size.width,
+                        child: GestureDetector(
+                          onTap: () {
+                            log("selectedNumbers: $withSelectedNumbers");
+                            setState(() {
+                              withSelectedNumbers = !withSelectedNumbers;
+                            });
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          height: 10,
+                          width: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color.fromARGB(
+                              255,
+                              238,
+                              126,
+                              126,
+                            ).withAlpha(withSelectedNumbers ? 100 : 20),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Container(
+                          height: 10,
+                          width: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color.fromARGB(
+                              255,
+                              238,
+                              126,
+                              126,
+                            ).withAlpha(withSelectedNumbers ? 100 : 20),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Text(
+                  'Ingresa el rango de numeros aleatorios que deseas generar',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    BaseTextfield(
+                      width: 150,
+                      controller: minimumController,
+                      labelText: 'Valor mínimo',
+                      keyboardType: TextInputType.number,
+                    ),
+                    BaseTextfield(
+                      width: 150,
+                      controller: maximumController,
+                      labelText: 'Valor máximo',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 120),
+                Text(
+                  _generatedNumber.toString(),
+                  style: TextStyle(fontSize: 120),
+                ),
+                SizedBox(height: 30),
+                SizedBox(
+                  width: 250,
+                  child: ElevatedButton(
+                    onPressed: () => _generateRandomNumber(
+                      withSelectedNumbers: withSelectedNumbers,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.auto_awesome),
+                        SizedBox(width: 20),
+                        Text('Generar numero'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
